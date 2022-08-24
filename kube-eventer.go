@@ -13,14 +13,8 @@ import (
 
 var (
 	addr = flag.String("listen", ":9999", "The address to listen on for http requests.")
-	customLabel = flag.String("custom-label", "", "The custom label of the metrics.")
 	kubeConfig = flag.String("kubeconfig", "/etc/kubernetes/admin.conf", "The kubeconfig of the k8s")
 )
-
-func init()  {
-	exporter := collector.NewCollector(customLabel)
-	prometheus.MustRegister(exporter)
-}
 
 func main() {
 	log.Print("Kube-eventer say: hello world!")
@@ -30,6 +24,8 @@ func main() {
 	w := worker.NewWorker(*kubeConfig, stopCh)
 	go w.Run()
 
+	exporter := collector.NewCollector(&w)
+	prometheus.MustRegister(exporter)
 	http.Handle("/metrics", promhttp.Handler())
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }

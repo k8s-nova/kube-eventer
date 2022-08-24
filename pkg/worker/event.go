@@ -12,5 +12,5 @@ type Event struct {
 	Reason    string
 	Source    string
 	Host      string
-	count     int32
+	Count     int32
 }
