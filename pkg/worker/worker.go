@@ -1,19 +1,22 @@
 package worker
 
 import (
+	"encoding/json"
 	v1 "k8s.io/api/events/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
+	"log"
+	"os"
 	"sync"
 	"time"
 )
 
 type Worker struct {
-	Mutex  *sync.Mutex
-	Events []Event
+	Mutex      *sync.Mutex
+	Events     []Event
 	kubeConfig string
 	stopCh     <-chan struct{}
 }
@@ -43,9 +46,9 @@ func (w *Worker) Run() {
 	})
 }
 
-func (w *Worker) eventAddHandle(obj interface{})  {
+func (w *Worker) eventAddHandle(obj interface{}) {
 	// watch add-event, and update events ---> Worker events
-	event :=  obj.(*v1.Event)
+	event := obj.(*v1.Event)
 	var eventTmp Event
 	eventTmp.Type = event.Type
 	eventTmp.Kind = event.Regarding.Kind
@@ -60,5 +63,13 @@ func (w *Worker) eventAddHandle(obj interface{})  {
 	w.Mutex.Lock()
 	w.Events = append(w.Events, eventTmp)
 	w.Mutex.Unlock()
-	klog.Infof("Add a event to worker.events, len: %d", len(w.Events))
+	klog.V(2).Infof("Add a event to worker.events, len: %d", len(w.Events))
+
+	// Send event to stdout.
+	logger := log.New(os.Stdout, "", 0)
+	writer := logger.Writer()
+	err := json.NewEncoder(writer).Encode(event)
+	if err != nil {
+		klog.Error("Failed to send event to stdout, err: %s", err.Error())
+	}
 }

@@ -12,7 +12,7 @@ import (
 func SetupSignalHandler() (stopCh <-chan struct{}) {
 	var (
 		onlyOneSignalHandler = make(chan struct{})
-		shutdownSignals = []os.Signal{os.Interrupt, syscall.SIGTERM}
+		shutdownSignals      = []os.Signal{os.Interrupt, syscall.SIGTERM}
 	)
 
 	close(onlyOneSignalHandler) // panics when called twice
